@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Closure Editor</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <style>
+        .node {
+            width: 15em;
+        }
+        .node:focus {
+            width: 15em;
+        }
+        .parentWord {
+            width: 3em;
+        }
+        .parentWord:focus {
+            width: 15em;
+        }
+        .childWord {
+            width: 3em;
+        }
+        .childWord:focus {
+            width: 15em;
+        }
+        .textArea {
+            height: 1em;
+        }
+        textarea {
+            resize: none;
+        }
+        textarea, input {
+            vertical-align: top;
+        }
+        .inputList {
+            list-style:none;
+        }
+    </style>
+
+    <script type="text/babel">
+    const cl = console.log;
+
+    window.onload = () => {
+        document.getElementById("tree").querySelector(".node").focus();
+    }
+
+    document.addEventListener('keydown', logKey);
+    
+    function logKey(e) {
+        if (event.ctrlKey === true && event.key === "Enter") {
+            document.getElementById("pushTree").click();
+        }
+    }
+
+    const renderName = (x) => {
+       if (x.name!=="") {
+       return (
+                <li>
+                    {x.name}
+                </li>
+                );
+       } else {
+       return (
+                <li>
+                    {" "}
+                </li>
+                );
+       }
+    };
+    
+    const nameWithNode =(x) => {
+       if (x.name!=="") {
+       return (
+                <li>
+                    {x.name}
+                    {treeView(x.node)}
+                </li>
+                );
+       } else {
+       return (
+                <li>
+                    {" "}
+                    {treeView(x.node)}
+                </li>
+                );
+       }
+    };
+    
+    const treeView = (node) => {
+        let dd = node.map(x => {
+            if (x.node !== undefined) {
+                if (x.node.length !== 0) {
+                    return nameWithNode(x);
+                } else {
+                    return renderName(x);
+                }
+            } else {
+                return renderName(x);
+            }
+        });
+        return (
+        <ul>
+            {dd}
+        </ul>
+        )
+    }
+
+    const dom2tree = (dom) => {
+        let ul = dom.querySelector("ul");
+        let result = {name: "root", node: []};
+        let findLi = ul.children;
+        let getChildName = function(Li) {
+            let node = [];
+            for (var i = 0; i < Li.length; i++){
+                let x = {name: Li[i].querySelector(".node").value};
+                let ul2 = Li[i].querySelector("ul");
+                if (ul2 === null) {
+                    node.push(x);
+                } else {
+                    let li2 = ul2.children;
+                    x['node'] = getChildName(li2);
+                    node.push(x);
+                };
+            }
+            return node
+        }
+        return getChildName(findLi);
+    }
+
+    const tree2adj = (base, parent) => {
+        let res = [];
+        for (let x of base) {
+            if (x.node === undefined) {
+                res.push({parent: parent, child: x.name});
+            } else {
+                res.push({parent: parent, child: x.name});
+                res.push(...tree2adj(x.node, x.name));
+            }
+        };
+        return res;
+    }
+    
+    const adj2word = (adj) => {
+        return adj.map(x => [x.parent, x.child]).flat().filter(x => x !== "");
+    }
+    const uniq = (array) => {
+        return Array.from(new Set(array));
+    }
+    
+    const moveFocusWord = (e) => {
+// 18:21 2020/04/23 https://javascript.programmer-reference.com/js-selectionstart-selectionend/
+        var k = e.keyCode;
+        var obj = e.currentTarget;
+        var strt = obj.selectionStart;
+        var end = obj.selectionEnd;
+        if (strt===0 && k === 37) {
+            obj.parentNode.parentNode.querySelector(".parentWord").focus();
+        }
+        if (obj.value.length===end && k === 39) {
+            obj.parentNode.parentNode.querySelector(".childWord").focus();
+        }
+    }
+
+    const moveFocusParent = (e) => {
+        var k = e.keyCode;
+        var obj = e.currentTarget;
+        var end = obj.selectionEnd;
+        if (obj.value.length===end && k === 39) {
+            obj.parentNode.parentNode.querySelector(".node").focus();
+        }
+    }
+
+    const moveFocusChild = (e) => {
+        var k = e.keyCode;
+        var obj = e.currentTarget;
+        var strt = obj.selectionStart;
+        if (strt===0 && k === 37) {
+            obj.parentNode.parentNode.querySelector(".node").focus();
+        }
+    }
+    
+// 19:19 2020/04/23 https://webparts.cman.jp/input/textarea/
+    const textAreaHeightSet = (e) => {
+      const argObj = e.currentTarget;
+      // 一旦テキストエリアを小さくしてスクロールバー（縦の長さを取得）
+      argObj.style.height = "10px";
+      var wSclollHeight = parseInt(argObj.scrollHeight);
+      // 1行の長さを取得する
+      var wLineH = parseInt(argObj.style.lineHeight.replace(/px/, ''));
+      // 最低2行の表示エリアにする
+      if(wSclollHeight < (wLineH)){wSclollHeight=(wLineH);}
+      // テキストエリアの高さを設定する
+      argObj.style.height = wSclollHeight + "px";
+    }
+
+    class App extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                treeSet:[],
+                adj:[],
+                word:[],
+                childWord:[],
+                parentWord:[],
+            };
+            this.pushTree = this.pushTree.bind(this);
+            this.liTemplate = this.liTemplate.bind(this);
+            this.liTemplateWithUl = this.liTemplateWithUl.bind(this);
+            this.ulTemplate = this.ulTemplate.bind(this);
+            this.selectAsTemplate = this.selectAsTemplate.bind(this);
+        }
+        
+        pushTree(e) {
+            const  promise = Promise.resolve();
+            promise.then(() => {
+                let treeDOM = document.getElementById("tree");
+                const tree = dom2tree(treeDOM);
+                const adj = uniq(this.state.adj.concat(tree2adj(tree, "")));
+                const word = uniq(adj2word(adj));
+                this.setState({
+                    treeSet: this.state.treeSet.concat([tree])
+                });
+                this.setState({
+                    adj: adj
+                });
+                this.setState({
+                    word: word
+                });
+                treeDOM.textContent = null;
+                let li2 = document.createElement("div");
+                let L = ReactDOM.render(this.ulTemplate(), li2);
+                treeDOM.appendChild(L);
+            }).then(() => {
+                document.getElementById("tree").querySelector(".node").focus();
+            });
+        }
+
+
+        liTemplate(v="") {
+            return (
+                <li className="inputList">
+                    <input type="text" list="parentWord" className="parentWord" onFocus={this.onFocusParent} onKeyDown={(e) => this.pushParentWithEnter(e, self)} tabIndex="-1" onKeyUp={(e) => moveFocusParent(e)}></input>
+                    <input type="text" list="word" className="node" onBlur={(e) => this.onBlur(e, this)} defaultValue={v} onKeyDown={(e) => this.pushSiblingWithEnter(e, self)} onKeyUp={(e) => moveFocusWord(e)}></input>
+                    <input type="text" list="childWord" className="childWord" onFocus={this.onFocusChild} onKeyDown={(e) => this.pushChildWithEnter(e, self)} tabIndex="-1" onKeyUp={(e) => moveFocusChild(e)}></input>
+                    <input type="button" onClick={(e) => e.currentTarget.parentNode.parentNode.removeChild(e.currentTarget.parentNode)}　value="x" tabIndex="-1"></input>
+                    <textarea className="textArea" onChange={(e) => textAreaHeightSet(e)}></textarea>
+
+                </li>
+            );
+        };
+
+
+        liTemplateWithUl(v="") {
+            return (
+                    <li>
+                        <input type="text" list="parentWord" className="parentWord" onFocus={this.onFocusParent} onKeyDown={(e) => this.pushParentWithEnter(e, self)} tabIndex="-1" onKeyUp={(e) => moveFocusParent(e)}></input>
+                        <input type="text" list="word" className="node" onBlur={(e) => this.onBlur(e, this)} defaultValue={v} onKeyDown={(e) => this.pushSiblingWithEnter(e, self)} onKeyUp={(e) => moveFocusWord(e)}></input>
+                        <input type="text" list="childWord" className="childWord" onFocus={this.onFocusChild} onKeyDown={(e) => this.pushChildWithEnter(e, self)} tabIndex="-1" onKeyUp={(e) => moveFocusChild(e)}></input>
+                        <input type="button" onClick={(e) => e.currentTarget.parentNode.parentNode.removeChild(e.currentTarget.parentNode)}　value="x" tabIndex="-1"></input>
+                        <textarea className="textArea" onChange={(e) => textAreaHeightSet(e)}></textarea>
+                        <ul>
+                        </ul>
+                    </li>
+            );
+        };
+
+        ulTemplate(v="") {
+          return (
+                <ul>
+                    {this.liTemplate(v)}
+                </ul>
+                );  
+        };
+            
+        onFocusChild(e) {
+            cl("sss")
+            
+        }
+
+        onFocusParent(e) {
+            cl("parent")
+            
+        }
+        
+        onBlur(e, self) {
+            let child = self.state.adj.filter(x => x.parent == e.target.value).map(x => x.child);
+            let parent = self.state.adj.filter(x => x.child == e.target.value).map(x => x.parent);
+            self.setState({
+               childWord: child 
+            });
+            self.setState({
+               parentWord: parent 
+            });
+        }
+        
+        addChild(e, self, v="") {
+            let li;
+            let li2 = document.createElement("div");
+            if (e.currentTarget.parentNode.querySelector("ul") === null) {
+                li = e.currentTarget.parentNode;
+                let L = ReactDOM.render(self.ulTemplate(v), li2);
+                li.appendChild(L);
+            } else {
+                li = e.currentTarget.parentNode.querySelector("ul");
+                let L = ReactDOM.render(self.liTemplate(v), li2);
+                li.appendChild(L);
+            }
+        }
+
+        addParent(e, self, v="") {
+            let li = e.currentTarget.parentNode;
+            let ul = e.currentTarget.parentNode.parentNode;
+            const lists = Array.from(ul.children);
+            
+            // 9:17 2020/04/18 https://qiita.com/nishihara_zari/items/9471389f995448e9526e
+            const idx = lists.findIndex(element => {
+                return element === li;
+            });
+            let li2 = document.createElement("div");
+            let L = ReactDOM.render(self.liTemplateWithUl(v), li2);
+            L.querySelector("ul").appendChild(li);
+            ul.insertBefore(L, ul.children[idx]);
+
+        }
+        
+        addSibling(e, self, v="") {
+            let li;
+            let li2 = document.createElement("div");
+            li = e.currentTarget.parentNode.parentNode;
+            let L = ReactDOM.render(self.liTemplate(v), li2);
+            li.appendChild(L);
+        }
+/*        
+        addTreeNode(e, self, v="") {
+            let treeDOM = document.getElementById("tree");
+            if (treeDOM.querySelector("ul") === null) {
+                let li2 = document.createElement("div");
+                let L = ReactDOM.render(self.ulTemplate(v), li2);
+                treeDOM.appendChild(L);
+            } else {
+                let li2 = document.createElement("div");
+                let L = ReactDOM.render(self.liTemplate(v), li2);
+                treeDOM.querySelector("ul").appendChild(L);
+            }
+        }
+*/
+        
+        pushChildWithEnter(e, self) {
+//            if (e.keyCode === 13) {
+            if (event.ctrlKey === false && event.key === "Enter") {
+              this.addChild(e, this, e.target.value);
+              e.target.value = "";
+            }
+        }
+
+        pushParentWithEnter(e, self) {
+//            if (e.keyCode === 13) {
+            if (event.ctrlKey === false && event.key === "Enter") {
+              this.addParent(e, this, e.target.value);
+              e.target.value = "";
+            }
+        }
+        
+        pushSiblingWithEnter(e, self) {
+//            if (e.keyCode === 13) {
+            if (event.ctrlKey === false && event.key === "Enter") {
+              this.addSibling(e, this, e.target.value);
+              e.target.value = "";
+            }
+        }
+        
+        selectAsTemplate(x) {
+            let treeDOM = document.getElementById("tree");
+            let dom = document.createElement("ul");
+            let DOM = this.tree2dom(x, dom);
+            treeDOM.textContent = null;
+            treeDOM.appendChild(DOM);
+        }
+        
+        tree2dom(tree, dom) {
+            let L;
+            let U;
+            let LD;
+            let UD;
+            for (let x of tree) {
+                LD = document.createElement("div");
+                L = ReactDOM.render(this.liTemplate(x.name), LD);
+                if (x.node !== undefined) {
+                    UD = document.createElement("ul");
+                    U = this.tree2dom(x.node, UD);
+                    L.appendChild(U);
+                }
+                dom.appendChild(L);
+            }
+            return dom;
+        }
+
+
+
+        render() {
+            return (
+            <div>
+                <div id="tree">
+                    {this.ulTemplate()}
+                </div>
+                <input type="button" id="pushTree" value="tree" onClick={this.pushTree}/>
+                {this.state.treeSet.map(x => (
+                        <fieldset>
+                            <button onClick={() => cl("edit")}>edit</button>
+                            <button onClick={(e) => this.selectAsTemplate(x)}>select</button>
+                            {treeView(x)}
+                        </fieldset>
+                        )
+                )}
+                <datalist id="parentWord">
+                    {uniq(this.state.parentWord.concat(["──────────"].concat(this.state.word))).map(x => {
+                        if (x !== "──────────") {
+                            return <option>{x}</option>
+                        } else {
+                            return <option readOnly>{x}</option>
+                        }
+                    })}
+                </datalist>
+                <datalist id="word">
+                    {this.state.word.map(x => <option>{x}</option>)}
+                </datalist>
+                <datalist id="childWord">
+                    {uniq(this.state.childWord.concat(["──────────"].concat(this.state.word))).map(x => {
+                        if (x !== "──────────") {
+                            return <option>{x}</option>
+                        } else {
+                            return <option readOnly>{x}</option>
+                        }
+                    })}
+                </datalist>
+            </div>
+            );          
+        }
+    }
+
+    ReactDOM.render(
+    <div>
+        <App/>
+    </div>,
+    document.getElementById('root')
+    );
+
+    </script>
+
+  </body>
+</html>
