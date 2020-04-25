@@ -14,12 +14,26 @@
         navigator.serviceWorker.register('./service-worker.js').then(function() { console.log('Service Worker Registered'); });
     }
     </script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
   <body>
     <div id="root"></div>
     
     <style>
+        @media only screen and (max-device-width : 480px) {
+            body {
+                width:100%;
+                margin: 0px auto;
+                padding: 0px;
+                text-align: center;
+            }
+            div {
+                width: 100%;
+            }
+            .inputList {
+                width: 100%;
+            }
+        }
         .node {
             width: 15em;
         }
@@ -38,7 +52,7 @@
         .childWord:focus {
             width: 15em;
         }
-        .textArea {
+        .memo {
             height: 1em;
         }
         textarea {
@@ -61,7 +75,7 @@
 
     document.addEventListener('keydown', logKey);
     
-    function logKey(e) {
+    function logKey() {
         if (event.ctrlKey === true && event.key === "Enter") {
             document.getElementById("pushTree").click();
         }
@@ -84,21 +98,18 @@
     };
     
     const nameWithNode =(x) => {
+       let lab;
        if (x.name!=="") {
-       return (
-                <li>
-                    {x.name}
-                    {treeView(x.node)}
-                </li>
-                );
+            lab = x.name;
        } else {
+            lab = " ";
+       }
        return (
                 <li>
-                    {" "}
+                    {lab}
                     {treeView(x.node)}
                 </li>
                 );
-       }
     };
     
     const treeView = (node) => {
@@ -230,6 +241,7 @@
             promise.then(() => {
                 let treeDOM = document.getElementById("tree");
                 const tree = dom2tree(treeDOM);
+                cl(JSON.stringify(tree))
                 const adj = uniq(this.state.adj.concat(tree2adj(tree, "")));
                 const word = uniq(adj2word(adj));
                 this.setState({
@@ -254,23 +266,21 @@
         liTemplate(v="") {
             return (
                 <li className="inputList">
-                    <input type="text" list="parentWord" className="parentWord" onFocus={this.onFocusParent} onKeyDown={(e) => this.pushParentWithEnter(e, self)} tabIndex="-1" onKeyUp={(e) => moveFocusParent(e)}></input>
-                    <input type="text" list="word" className="node" onBlur={(e) => this.onBlur(e, this)} defaultValue={v} onKeyDown={(e) => this.pushSiblingWithEnter(e, self)} onKeyUp={(e) => moveFocusWord(e)}></input>
-                    <input type="text" list="childWord" className="childWord" onFocus={this.onFocusChild} onKeyDown={(e) => this.pushChildWithEnter(e, self)} tabIndex="-1" onKeyUp={(e) => moveFocusChild(e)}></input>
+                    <input type="text" list="parentWord" className="parentWord" onFocus={this.onFocusParent} onKeyDown={(e) => this.pushWithEnter(e, self, this.addParent)} tabIndex="-1" onKeyUp={(e) => moveFocusParent(e)}></input>
+                    <input type="text" list="word" className="node" onBlur={(e) => this.onBlur(e, this)} defaultValue={v} onKeyDown={(e) => this.pushWithEnter(e, self, this.addSibling)} onKeyUp={(e) => moveFocusWord(e)}></input>
+                    <input type="text" list="childWord" className="childWord" onFocus={this.onFocusChild} onKeyDown={(e) => this.pushWithEnter(e, self, this.addChild)} tabIndex="-1" onKeyUp={(e) => moveFocusChild(e)}></input>
                     <input type="button" onClick={(e) => e.currentTarget.parentNode.parentNode.removeChild(e.currentTarget.parentNode)}　value="x" tabIndex="-1"></input>
-                    <textarea className="textArea" onChange={(e) => textAreaHeightSet(e)}></textarea>
-
+                    <textarea className="memo" onChange={(e) => textAreaHeightSet(e)}></textarea>
                 </li>
             );
         };
 
-
         liTemplateWithUl(v="") {
             return (
                     <li>
-                        <input type="text" list="parentWord" className="parentWord" onFocus={this.onFocusParent} onKeyDown={(e) => this.pushParentWithEnter(e, self)} tabIndex="-1" onKeyUp={(e) => moveFocusParent(e)}></input>
-                        <input type="text" list="word" className="node" onBlur={(e) => this.onBlur(e, this)} defaultValue={v} onKeyDown={(e) => this.pushSiblingWithEnter(e, self)} onKeyUp={(e) => moveFocusWord(e)}></input>
-                        <input type="text" list="childWord" className="childWord" onFocus={this.onFocusChild} onKeyDown={(e) => this.pushChildWithEnter(e, self)} tabIndex="-1" onKeyUp={(e) => moveFocusChild(e)}></input>
+                        <input type="text" list="parentWord" className="parentWord" onFocus={this.onFocusParent} onKeyDown={(e) => this.pushWithEnter(e, self, this.addParent)} tabIndex="-1" onKeyUp={(e) => moveFocusParent(e)}></input>
+                        <input type="text" list="word" className="node" onBlur={(e) => this.onBlur(e, this)} defaultValue={v} onKeyDown={(e) => this.pushWithEnter(e, self, this.addSibling)} onKeyUp={(e) => moveFocusWord(e)}></input>
+                        <input type="text" list="childWord" className="childWord" onFocus={this.onFocusChild} onKeyDown={(e) => this.pushWithEnter(e, self, this.addChild)} tabIndex="-1" onKeyUp={(e) => moveFocusChild(e)}></input>
                         <input type="button" onClick={(e) => e.currentTarget.parentNode.parentNode.removeChild(e.currentTarget.parentNode)}　value="x" tabIndex="-1"></input>
                         <textarea className="textArea" onChange={(e) => textAreaHeightSet(e)}></textarea>
                         <ul>
@@ -345,31 +355,24 @@
             let L = ReactDOM.render(self.liTemplate(v), li2);
             li.appendChild(L);
         }
-/*        
-        addTreeNode(e, self, v="") {
-            let treeDOM = document.getElementById("tree");
-            if (treeDOM.querySelector("ul") === null) {
-                let li2 = document.createElement("div");
-                let L = ReactDOM.render(self.ulTemplate(v), li2);
-                treeDOM.appendChild(L);
-            } else {
-                let li2 = document.createElement("div");
-                let L = ReactDOM.render(self.liTemplate(v), li2);
-                treeDOM.querySelector("ul").appendChild(L);
+
+        pushWithEnter(e, self, func) {
+            if (event.ctrlKey === false && event.key === "Enter") {
+              func(e, this, e.target.value);
+              e.target.value = "";
             }
         }
-*/
-        
-        pushChildWithEnter(e, self) {
-//            if (e.keyCode === 13) {
+
+/*        
+        pushChildWithEnter(e, self, func) {
             if (event.ctrlKey === false && event.key === "Enter") {
-              this.addChild(e, this, e.target.value);
+//              this.addChild(e, this, e.target.value);
+              func(e, this, e.target.value);
               e.target.value = "";
             }
         }
 
         pushParentWithEnter(e, self) {
-//            if (e.keyCode === 13) {
             if (event.ctrlKey === false && event.key === "Enter") {
               this.addParent(e, this, e.target.value);
               e.target.value = "";
@@ -377,12 +380,12 @@
         }
         
         pushSiblingWithEnter(e, self) {
-//            if (e.keyCode === 13) {
             if (event.ctrlKey === false && event.key === "Enter") {
               this.addSibling(e, this, e.target.value);
               e.target.value = "";
             }
         }
+*/
         
         selectAsTemplate(x) {
             let treeDOM = document.getElementById("tree");
@@ -453,12 +456,7 @@
         }
     }
 
-    ReactDOM.render(
-    <div>
-        <App/>
-    </div>,
-    document.getElementById('root')
-    );
+    ReactDOM.render(<App/>, document.getElementById('root'));
 
     </script>
 
