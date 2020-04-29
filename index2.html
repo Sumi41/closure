@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Closure Editor</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <link rel="apple-touch-icon" href="./icon-192.png" sizes="192x192"/>
+    <link rel="manifest" href="./manifest.json">
+    <script>
+    // service workerが有効なら、service-worker.js を登録します
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js').then(function() { console.log('Service Worker Registered'); });
+    }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <style>
+        #tree {
+            border: 1px solid #FF0000;
+//            height: 568px;
+        }
+        
+        li {
+//            display: inline-block;
+            list-style:none;
+            border: 1px solid #00FF00;
+        }
+        ul {
+            padding: 0%;
+        }
+        
+        .acd-check{
+            display: none;
+        }
+        
+        .acd-content{
+//            border: 1px solid #333;
+            height: 0;
+            opacity: 0;
+            transition: .5s;
+            visibility: hidden;
+        }
+        
+        .acd-check:checked ~ .acd-content{
+            height: auto;
+            opacity: 1;
+            padding: 5%;
+            visibility: visible;
+        }
+        
+        .closed {
+            border: 0px;
+        }
+        
+        .open {
+        
+        }
+        
+        .addLi {
+            display: block;
+//            display: none;
+            margin: 0 0 0 0;
+            border: 1px solid #00FF00;
+            height: 0px;
+            width: 0px;
+            visibility: hidden;
+        }
+        .addLi2 {
+            display: block;
+            margin: 0 0 0 auto;
+            border: 1px solid #00FF00;
+        }
+        
+        .blue-background-class {
+            background-color: #9999FF;
+        }
+        
+    </style>
+    
+    <script type="text/babel">
+    const cl = console.log;
+    const data = [{"name": "33"}, {"name":"","node":[{"name":"2","node":[{"name":"3"},{"name":"4"}]},{"name":"5","node":[{"name":"6"}]},{"name":"7","node":[{"name":"8"},{"name":"9"}]},{"name":"11"}]},{"name":"12","node":[{"name":"-"}]},{"name":"13","node":[{"name":"14"},{"name":"15"},{"name":"16"},{"name":"18"},{"name":"19"}]},{"name":"17"}];
+    const dom2sortable = (ul) => {
+        new Sortable(ul, {
+            group: 'nested',
+            animation: 150,
+            fallbackOnBody: true,
+            swapThreshold: 0.9,
+            ghostClass: 'blue-background-class',
+            filter: ".static",
+            onMove:function (evt) {
+                if (evt.related)
+                {
+                    return !evt.related.classList.contains('static');
+                }
+            }
+        });
+        
+        let Li = ul.children;
+        for (var i = 0; i < Li.length; i++){
+            let ul2 = Li[i].querySelector("ul");
+            if (ul2 !== null) {
+                dom2sortable(ul2);
+            };
+        }
+    }
+
+
+    window.onload = () => {
+        var el = document.getElementById('tree').querySelector("ul");
+        dom2sortable(el);
+    }
+    
+    const getUniqueStr = (myStrong) => {
+        var strong = 1000;
+        if (myStrong) strong = myStrong;
+        return new Date().getTime().toString(16)  + Math.floor(strong*Math.random()).toString(16)
+    }
+    
+    const aaa = (tr, x) => (
+                <li>
+                    <fieldset className="closed" onClick={(e) => e.currentTarget.querySelector("input").click()}>
+                        <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
+                        <legend className="acd-label" onClick={(e) => {cl("legend");e.stopPropagation();cl(e.currentTarget.parentNode.parentNode.parentNode.parentNode.querySelector("legend").innerHTML=e.currentTarget.innerHTML)}}>{x.name}</legend>
+                        <ul className="acd-content">
+                            {tr}
+                        </ul>
+                        <button className="addLi2" onClick={(e) => {e.stopPropagation();let div = document.createElement("div"); e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));}}>+</button>
+                    </fieldset>
+                </li>
+    );
+    
+    class TreeComponent extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+            
+            }
+        }
+        render() {
+            let tr = this.props.tr;
+            let x = this.props.x;
+            return aaa(tr, x);
+        }
+    }
+    
+    const treeView = (node) => {
+        let dd = node.map((x, i) => {
+            let tr = "";
+            if (x.node !== undefined && x.node.length !== 0) tr = treeView(x.node);
+            return (<TreeComponent tr={tr} x={x} key={i}/>);
+        });
+        return dd;
+    }
+    
+    const uniq = (array) => {
+        return Array.from(new Set(array));
+    }
+    
+
+    class App extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                data:data,
+            };
+        }
+
+        render() {
+            return (
+            <div>
+                <div id="tree">
+                    <ul>
+                        <li className="static">xxx</li>
+                        {treeView(data)}
+                    </ul>
+                </div>
+            </div>
+            );          
+        }
+    }
+    
+    ReactDOM.render(<App/>, document.getElementById('root'));
+
+    </script>
+  </body>
+</html>
