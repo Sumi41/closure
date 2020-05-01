@@ -163,11 +163,6 @@
         .text-area {
             width: 5em;
         }
-        
-        .text-area-large {
-            height: 15em;
-            width: 15em;
-        }
 
         .text-area:focus {
             height: 15em;
@@ -186,15 +181,6 @@
             position: relative;
         }
         
-        openx {
-        
-        }
-        
-        closedx {
-            visibility: hidden;
-            background-color:#0000FF;
-        }
-        
     </style>
     
     <script type="text/babel">
@@ -206,14 +192,7 @@
             animation: 150,
             fallbackOnBody: true,
             swapThreshold: 0.65,
-            ghostClass: 'blue-background-class',
-            filter: ".static",
-            onMove:function (evt) {
-                if (evt.related)
-                {
-                    return !evt.related.classList.contains('static');
-                }
-            }
+            ghostClass: 'blue-background-class'
         });
         
         let Li = ul.children;
@@ -241,7 +220,6 @@
         
     const deClose = e => {
         e.stopPropagation();
-
         let li = e.currentTarget.parentNode.parentNode;
         let ul = li.parentNode;
         const lists = Array.from(ul.children);
@@ -249,24 +227,13 @@
         const idx = lists.findIndex(element => {
             return element === li;
         });
-        cl(idx)
         let ulChild = Array.from(li.querySelector("ul").children);
-        cl(ulChild)
         for (let x of ulChild.reverse()) {
             ul.insertBefore(x, ul.children[idx]);
         }
         li.remove();
     }
 
-    const toggleTextArea = e => {
-        e.stopPropagation();
-        if (e.currentTarget.nextElementSibling.querySelector("textarea").className === "text-area") {
-            e.currentTarget.nextElementSibling.querySelector("textarea").className = "text-area-large";
-        } else {
-            e.currentTarget.nextElementSibling.querySelector("textarea").className = "text-area"
-        }
-    }
-    
     const aaa = (tr, x) => (
                 <li>
                     <fieldset className="closed" onClick={(e) => e.currentTarget.querySelector("input").click()}>
@@ -282,14 +249,12 @@
                         <ul className="acd-content">
                             {tr}
                         </ul>
-                        <button className="addLi2" onClick={(e) => addLiDOM(e)}>+</button>
-                        <button className="deClose" onClick={(e) => deClose(e)}>x</button>
                         <input type="checkbox" className="grouping" onClick={(e) => {e.stopPropagation();}}/>
-                        <button className="open-text" onClick={(e) => toggleTextArea(e)}>open</button>
-                        <div className="closed">
-                            <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
+                        <div>
                             <textarea className="text-area" onClick={(e) => {e.stopPropagation();}} onBlur={(e) => {e.stopPropagation();e.preventDefault()}}/>
                         </div>
+                        <button className="deClose" onClick={(e) => deClose(e)}>x</button>
+                        <button className="addLi2" onClick={(e) => addLiDOM(e)}>+</button>
                     </fieldset>
                 </li>
     );
@@ -302,7 +267,6 @@
     const getChecked = e => {
         let checked = [...document.querySelectorAll(".grouping:checked")].map(x => x.parentNode.parentNode)
         return checked;
-        
     }
     
     const addLiDOM = e => {
@@ -317,18 +281,9 @@
         for (let x of [...document.querySelectorAll(".grouping:checked")]) {
             x.checked = false;
         }
-
-        reflow(dom);
+//        reflow(dom);
     }
 
-/*    
-    const addToNode = e => {
-        e.stopPropagation();
-        let div = document.createElement("div");
-        e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
-    }
-*/
-    
     class TreeComponent extends React.Component {
         constructor(props) {
             super(props);
@@ -379,9 +334,7 @@
             );          
         }
     }
-    
     ReactDOM.render(<App/>, document.getElementById('root'));
-
     </script>
   </body>
 </html>
