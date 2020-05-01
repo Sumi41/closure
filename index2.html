@@ -26,6 +26,16 @@
   <body>
     <div id="root"></div>
     <style>
+        body{   // 16:03 2020/05/01 https://www.itti.jp/web-design/not-drag/
+            user-select:none;
+            -webkit-user-select:none;
+            -ms-user-select: none;
+            -moz-user-select:none;
+            -khtml-user-select:none;
+            -webkit-user-drag:none;
+            -khtml-user-drag:none;
+        }
+    
         #tree {
             border: 1px solid #FF0000;
 //            height: 568px;
@@ -150,6 +160,7 @@
         }
         
         .text-area {
+            position: relative;
             width: 5em;
         }
         .text-area:focus {
@@ -158,6 +169,10 @@
         }
         textarea {
             resize: none;
+        }
+        
+        fieldset {
+            position: relative;
         }
     </style>
     
@@ -320,7 +335,7 @@
 
         render() {
             return (
-            <div>
+            <body>
                 <div id="tree">
                     <input className="acd-check" type="checkbox" checked readOnly></input>
                     <ul className="acd-content">
@@ -328,7 +343,7 @@
                     </ul>
                     <button className="addLiBase" onClick={(e) => addLiDOM(e)}>+</button>
                 </div>
-            </div>
+            </body>
             );          
         }
     }
