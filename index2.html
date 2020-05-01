@@ -74,9 +74,6 @@
             border: 0px;
         }
         
-        .open {
-        
-        }
         
         .addLi {
             display: block;
@@ -160,13 +157,14 @@
         }
         
         .text-area {
-            position: relative;
             width: 5em;
         }
-        .text-area:focus {
+        
+        .text-area-large {
             height: 15em;
             width: 15em;
         }
+
         textarea {
             resize: none;
         }
@@ -174,6 +172,16 @@
         fieldset {
             position: relative;
         }
+        
+        openx {
+        
+        }
+        
+        closedx {
+            visibility: hidden;
+            background-color:#0000FF;
+        }
+        
     </style>
     
     <script type="text/babel">
@@ -237,7 +245,14 @@
         li.remove();
     }
 
-
+    const toggleTextArea = e => {
+        e.stopPropagation();
+        if (e.currentTarget.nextElementSibling.className === "text-area") {
+            e.currentTarget.nextElementSibling.className = "text-area-large";
+        } else {
+            e.currentTarget.nextElementSibling.className = "text-area"
+        }
+    }
     
     const aaa = (tr, x) => (
                 <li>
@@ -257,7 +272,8 @@
                         <button className="addLi2" onClick={(e) => addLiDOM(e)}>+</button>
                         <button className="deClose" onClick={(e) => deClose(e)}>x</button>
                         <input type="checkbox" className="grouping" onClick={(e) => {e.stopPropagation();}}/>
-                        <textarea className="text-area" onClick={(e) => {e.stopPropagation();}}/>
+                        <button className="open-text" onClick={(e) => toggleTextArea(e)}>open</button>
+                        <textarea className="text-area" onClick={(e) => {e.stopPropagation();}} onBlur={(e) => {e.stopPropagation();e.preventDefault()}}/>
                     </fieldset>
                 </li>
     );
@@ -335,7 +351,7 @@
 
         render() {
             return (
-            <body>
+            <div>
                 <div id="tree">
                     <input className="acd-check" type="checkbox" checked readOnly></input>
                     <ul className="acd-content">
@@ -343,7 +359,7 @@
                     </ul>
                     <button className="addLiBase" onClick={(e) => addLiDOM(e)}>+</button>
                 </div>
-            </body>
+            </div>
             );          
         }
     }
