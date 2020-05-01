@@ -16,7 +16,12 @@
     }
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-sortablejs@2.0.11/dist/index.min.js"></script>
+-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.6.0/Sortable.js"></script>
+
   </head>
   <body>
     <div id="root"></div>
@@ -30,6 +35,7 @@
 //            display: inline-block;
             list-style:none;
             border: 1px solid #00FF00;
+            vertical-align: center;
         }
         ul {
             padding: 0%;
@@ -50,7 +56,7 @@
         .acd-check:checked ~ .acd-content{
             height: auto;
             opacity: 1;
-            padding: 5%;
+            padding: 2%;
             visibility: visible;
         }
         
@@ -71,16 +77,88 @@
             width: 0px;
             visibility: hidden;
         }
-        .addLi2 {
+
+        .acd-check:checked ~ .addLi2{
+            display: block;
+            margin: 0 0 0 auto;
+            border: 1px solid #00FF00;
+        }
+
+        .addLiBase{
             display: block;
             margin: 0 0 0 auto;
             border: 1px solid #00FF00;
         }
         
+        .grouping {
+            display: block;
+            margin: 0 0 0 auto;
+            border: 1px solid #00FF00;
+        }
+
+        .addLi2 {
+            display: none;
+        }
+
         .blue-background-class {
             background-color: #9999FF;
         }
         
+        .handle {
+            height: 1em;
+            width: 1em;
+            background-color: #FF1010;
+            display:inline-block;
+        }
+        
+        .handle, input {
+            vertical-align: top;
+        }
+        
+        .pad {
+            height: 1em;
+            width: 1em;
+            display:inline-block;
+        }
+
+        .input {
+            width: 8em;
+            height: 1em;
+            font-size: 1em;
+            border: none;
+            outline: 0;
+            border-bottom: 1px solid #d1d5db;
+            display:inline-block;
+        }
+        .container1 {
+            display:inline-block;
+            line-height: 0; // 11:32 2020/04/30 https://coliss.com/articles/build-websites/operation/css/6-cases-of-unwanted-spaces-in-page-layout-by-demosthenes.html
+        }
+
+        .underline {
+            // 8:56 2020/05/01 https://qiita.com/miyarappo/items/33a30e877e3964859b93
+            width: 10em;
+            height: 2px;
+            background: skyBlue;
+            transform-origin: center center;
+            transform: scaleX(0);
+            transition: transform 0.18s ease-out;
+        }
+
+        .input:focus ~ .underline {
+            transform: scaleX(1);
+        }
+        
+        .text-area {
+            width: 5em;
+        }
+        .text-area:focus {
+            height: 15em;
+            width: 15em;
+        }
+        textarea {
+            resize: none;
+        }
     </style>
     
     <script type="text/babel">
@@ -88,10 +166,10 @@
     const data = [{"name": "33"}, {"name":"","node":[{"name":"2","node":[{"name":"3"},{"name":"4"}]},{"name":"5","node":[{"name":"6"}]},{"name":"7","node":[{"name":"8"},{"name":"9"}]},{"name":"11"}]},{"name":"12","node":[{"name":"-"}]},{"name":"13","node":[{"name":"14"},{"name":"15"},{"name":"16"},{"name":"18"},{"name":"19"}]},{"name":"17"}];
     const dom2sortable = (ul) => {
         new Sortable(ul, {
-            group: 'nested',
+            group: 'acd-content',
             animation: 150,
             fallbackOnBody: true,
-            swapThreshold: 0.9,
+            swapThreshold: 0.65,
             ghostClass: 'blue-background-class',
             filter: ".static",
             onMove:function (evt) {
@@ -117,24 +195,92 @@
         dom2sortable(el);
     }
     
-    const getUniqueStr = (myStrong) => {
-        var strong = 1000;
-        if (myStrong) strong = myStrong;
-        return new Date().getTime().toString(16)  + Math.floor(strong*Math.random()).toString(16)
+    const changeLegend = e => {
+        e.stopPropagation();
+        let target = e.currentTarget.parentNode.parentNode.parentNode.parentNode.querySelector(":scope>legend>.container1>input");
+        if (target !== null) {
+            target.value = e.currentTarget.querySelector("input").value;
+        }
     }
+        
+    const deClose = e => {
+        e.stopPropagation();
+
+        let li = e.currentTarget.parentNode.parentNode;
+        let ul = li.parentNode;
+        const lists = Array.from(ul.children);
+        // 9:17 2020/04/18 https://qiita.com/nishihara_zari/items/9471389f995448e9526e
+        const idx = lists.findIndex(element => {
+            return element === li;
+        });
+        cl(idx)
+        let ulChild = Array.from(li.querySelector("ul").children);
+        cl(ulChild)
+        for (let x of ulChild.reverse()) {
+            ul.insertBefore(x, ul.children[idx]);
+        }
+        li.remove();
+    }
+
+
     
     const aaa = (tr, x) => (
                 <li>
                     <fieldset className="closed" onClick={(e) => e.currentTarget.querySelector("input").click()}>
                         <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
-                        <legend className="acd-label" onClick={(e) => {cl("legend");e.stopPropagation();cl(e.currentTarget.parentNode.parentNode.parentNode.parentNode.querySelector("legend").innerHTML=e.currentTarget.innerHTML)}}>{x.name}</legend>
+                        <legend className="acd-label" onClick={(e) => changeLegend(e)}>
+                            <div className="handle" />
+                            <div className="container1">
+                                <input className="input" defaultValue={x.name} onClick={(e) => {cl("input");e.stopPropagation();cl(e.currentTarget.value)}}/>
+                                <div className="pad" />
+                                <div className="underline" />
+                            </div>
+                        </legend>
                         <ul className="acd-content">
                             {tr}
                         </ul>
-                        <button className="addLi2" onClick={(e) => {e.stopPropagation();let div = document.createElement("div"); e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));}}>+</button>
+                        <button className="addLi2" onClick={(e) => addLiDOM(e)}>+</button>
+                        <button className="deClose" onClick={(e) => deClose(e)}>x</button>
+                        <input type="checkbox" className="grouping" onClick={(e) => {e.stopPropagation();}}/>
+                        <textarea className="text-area" onClick={(e) => {e.stopPropagation();}}/>
                     </fieldset>
                 </li>
     );
+    
+    const reflow = e => {
+    // 22:28 2020/04/30 https://qiita.com/kymmt@github/items/b9dee5aa0fe6b6f876c2
+        console.log(e.offsetHeight);
+    }
+
+    const getChecked = e => {
+        let checked = [...document.querySelectorAll(".grouping:checked")].map(x => x.parentNode.parentNode)
+        return checked;
+        
+    }
+    
+    const addLiDOM = e => {
+        e.stopPropagation();
+        let div = document.createElement("div");
+        let dom = e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
+        for (let x of getChecked()) {
+            dom.querySelector("ul").appendChild(x);
+        }
+        dom2sortable(dom.querySelector("ul"));
+
+        for (let x of [...document.querySelectorAll(".grouping:checked")]) {
+            x.checked = false;
+        }
+
+        reflow(dom);
+    }
+
+/*    
+    const addToNode = e => {
+        e.stopPropagation();
+        let div = document.createElement("div");
+        e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
+    }
+*/
     
     class TreeComponent extends React.Component {
         constructor(props) {
@@ -176,10 +322,11 @@
             return (
             <div>
                 <div id="tree">
-                    <ul>
-                        <li className="static">xxx</li>
+                    <input className="acd-check" type="checkbox" checked readOnly></input>
+                    <ul className="acd-content">
                         {treeView(data)}
                     </ul>
+                    <button className="addLiBase" onClick={(e) => addLiDOM(e)}>+</button>
                 </div>
             </div>
             );          
