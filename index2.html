@@ -122,20 +122,13 @@
             display:inline-block;
         }
         
-        .handle, input {
+        .handle, .container1 {
             vertical-align: top;
         }
-        
-        .pad {
-            height: 1em;
-            width: 1em;
-            display:inline-block;
-        }
 
-        .input {
+        input {
             width: 8em;
-            height: 1em;
-            font-size: 1em;
+            height: 16px;
             border: none;
             outline: 0;
             border-bottom: 1px solid #d1d5db;
@@ -148,7 +141,7 @@
 
         .underline {
             // 8:56 2020/05/01 https://qiita.com/miyarappo/items/33a30e877e3964859b93
-            width: 10em;
+            width: 8em;
             height: 2px;
             background: skyBlue;
             transform-origin: center center;
@@ -161,6 +154,7 @@
         }
         
         .text-area {
+            height: 1em;
             width: 5em;
         }
 
@@ -242,7 +236,6 @@
                             <div className="handle" />
                             <div className="container1">
                                 <input className="input" defaultValue={x.name} onClick={(e) => {cl("input");e.stopPropagation();cl(e.currentTarget.value)}}/>
-                                <div className="pad" />
                                 <div className="underline" />
                             </div>
                         </legend>
@@ -258,17 +251,19 @@
                     </fieldset>
                 </li>
     );
-    
+   
+/*
     const reflow = e => {
     // 22:28 2020/04/30 https://qiita.com/kymmt@github/items/b9dee5aa0fe6b6f876c2
         console.log(e.offsetHeight);
     }
+*/
 
     const getChecked = e => {
         let checked = [...document.querySelectorAll(".grouping:checked")].map(x => x.parentNode.parentNode)
         return checked;
     }
-    
+
     const addLiDOM = e => {
         e.stopPropagation();
         let div = document.createElement("div");
