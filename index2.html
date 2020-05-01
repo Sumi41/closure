@@ -275,11 +275,6 @@
                         <button className="addLi2" onClick={(e) => addLiDOM(e)}>+</button>
                         <button className="deClose" onClick={(e) => deClose(e)}>x</button>
                         <input type="checkbox" className="grouping" onClick={(e) => {e.stopPropagation();}}/>
-                        <button className="open-text" onClick={(e) => toggleTextArea(e)}>open</button>
-                        <div className="closed">
-                            <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
-                            <textarea className="text-area" onClick={(e) => {e.stopPropagation();}} onBlur={(e) => {e.stopPropagation();e.preventDefault()}}/>
-                        </div>
                     </fieldset>
                 </li>
     );
