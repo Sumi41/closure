@@ -110,6 +110,13 @@
             background-color: #9999FF;
         }
         
+        .represent {
+            height: 1em;
+            width: 1em;
+            background-color: #00FF00;
+            display:inline-block;
+        }
+        
         .handle {
             height: 1em;
             width: 1em;
@@ -124,7 +131,7 @@
             display:inline-block;
         }
         
-        .handle, .container1, .grouping, .toggle {
+        .represent, .handle, .container1, .grouping, .toggle {
             vertical-align: top;
         }
         
@@ -194,7 +201,8 @@
             animation: 150,
             fallbackOnBody: true,
             swapThreshold: 0.65,
-            ghostClass: 'blue-background-class'
+            ghostClass: 'blue-background-class',
+            handle: ".handle"
         });
         
         let Li = ul.children;
@@ -214,9 +222,9 @@
     
     const changeLegend = e => {
         e.stopPropagation();
-        let target = e.currentTarget.parentNode.parentNode.parentNode.parentNode.querySelector(":scope>legend>.container1>input");
+        let target = e.currentTarget.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.querySelector(":scope>fieldset>legend>.container1>input");
         if (target !== null) {
-            target.value = e.currentTarget.querySelector("input").value;
+            target.value = e.currentTarget.parentNode.querySelector(".label-name").value;
         }
     }
         
@@ -240,8 +248,8 @@
                 <li>
                     <fieldset className="closed">
                         <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
-                        <legend className="acd-label" onClick={(e) => changeLegend(e)}>
-                            <div className="handle" />
+                        <legend className="acd-label">
+                            <div className="represent" onClick={(e) => changeLegend(e)}/>
                             <div className="container1">
                                 <input className="label-name" defaultValue={x.name}/>
                                 <div className="underline" />
@@ -249,6 +257,7 @@
                             <textarea className="description"/>
                             <input type="checkbox" className="grouping"/>
                             <div className="toggle"  onClick={(e) => e.currentTarget.parentNode.parentNode.querySelector(":scope>input[type=checkbox]").click()}/>
+                            <div className="handle"/>
                         </legend>
                         <ul className="acd-content">
                             {tr}
@@ -345,12 +354,12 @@
             <div>
                 <div id="tree">
                     <input className="acd-check" type="checkbox" checked readOnly></input>
-                    <label>start: </label>
                     <input type="date" className="startDate"></input>
                     <input type="time" className="startTime" step="1"></input>
                     <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".startTime").value=now.format("HH:mm:ss");e.currentTarget.parentNode.querySelector(".startDate").value=now.format("YYYY-MM-DD");}}>Now</button>
                     <br/>
-                    <label>end: </label>
+                    <label>↓</label>
+                    <br/>
                     <input type="date" className="endDate"></input>
                     <input type="time" className="endTime" step="1"></input>
                     <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".endTime").value=now.format("HH:mm:ss");e.currentTarget.parentNode.querySelector(".endDate").value=now.format("YYYY-MM-DD");}}>Now</button>
