@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Closure Editor</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <link rel="apple-touch-icon" href="./icon-192.png" sizes="192x192"/>
+    <link rel="manifest" href="./manifest.json">
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js').then(function() { console.log('Service Worker Registered'); });
+    }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.10.1/Sortable.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/locale/ja.js"></script>
+
+  </head>
+  <body>
+    <div id="root"></div>
+    <style>
+        body{   // 16:03 2020/05/01 https://www.itti.jp/web-design/not-drag/
+            user-select:none;
+            -webkit-user-select:none;
+            -ms-user-select: none;
+            -moz-user-select:none;
+            -khtml-user-select:none;
+            -webkit-user-drag:none;
+            -khtml-user-drag:none;
+        }
+    
+        #tree {
+            border: 1px solid #FF0000;
+        }
+        
+        li {
+            list-style:none;
+            border: 1px solid #00FF00;
+            vertical-align: center;
+        }
+        ul {
+            padding: 0%;
+        }
+        
+        .acd-check{
+            display: none;
+        }
+        
+        .acd-content{
+            height: 0;
+            opacity: 0;
+            transition: .5s;
+            visibility: hidden;
+        }
+        
+        .acd-check:checked ~ .acd-content{
+            height: auto;
+            opacity: 1;
+            padding: 2%;
+            visibility: visible;
+        }
+        
+        .closed {
+            border: 0px;
+        }
+        
+        .open {
+        
+        }
+        
+        .addLi {
+            display: block;
+            margin: 0 0 0 0;
+            border: 1px solid #00FF00;
+            height: 0px;
+            width: 0px;
+            visibility: hidden;
+        }
+
+        .acd-check:checked ~ .addLi2{
+            display: block;
+            margin: 0 0 0 auto;
+            border: 1px solid #00FF00;
+        }
+
+        .addLiBase{
+            display: block;
+            margin: 0 0 0 auto;
+            border: 1px solid #00FF00;
+        }
+        
+        .grouping {
+            display: inline-block;
+            margin: 0 0 0 auto;
+            border: 1px solid #00FF00;
+            width: 1em;
+            height: 1em;
+        }
+        
+        .addLi2 {
+            display: none;
+        }
+
+        .blue-background-class {
+            background-color: #9999FF;
+        }
+        
+        .handle {
+            height: 1em;
+            width: 1em;
+            background-color: #FF0000;
+            display:inline-block;
+        }
+        
+        .toggle {
+            height: 1em;
+            width: 1em;
+            background-color: #FF00FF;
+            display:inline-block;
+        }
+        
+        .handle, .container1, .grouping, .toggle {
+            vertical-align: top;
+        }
+        
+        .label-name, .underline {
+            width: 10em;
+        }
+
+        .label-name {
+            border: none;
+            outline: 0;
+            border-bottom: 1px solid #d1d5db;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .container1 {
+            display:inline-block;
+            line-height: 0; // 11:32 2020/04/30 https://coliss.com/articles/build-websites/operation/css/6-cases-of-unwanted-spaces-in-page-layout-by-demosthenes.html
+        }
+
+        .underline { // 8:56 2020/05/01 https://qiita.com/miyarappo/items/33a30e877e3964859b93
+            height: 2px;
+            background: skyBlue;
+            transform-origin: center;
+            transform: scaleX(0);
+            transition: transform 0.18s ease-out;
+        }
+
+        .label-name:focus ~ .underline {
+            transform: scaleX(1);
+            height: 2px;
+        }
+
+        .label-name:focus {
+            background-color: #FFAAAA;
+        }
+        
+        .description {
+            height: 1em;
+            width: 5em;
+        }
+
+        .description:focus {
+            height: 15em;
+            width: 15em;
+        }
+
+        textarea {
+            resize: none;
+        }
+        
+        input, textarea {
+            font-size: 16px;
+        }
+        
+        fieldset {
+            position: relative;
+        }
+        
+    </style>
+    
+    <script type="text/babel">
+    const cl = console.log;
+    const data = [];
+    const dom2sortable = (ul) => {
+        new Sortable(ul, {
+            group: 'acd-content',
+            animation: 150,
+            fallbackOnBody: true,
+            swapThreshold: 0.65,
+            ghostClass: 'blue-background-class'
+        });
+        
+        let Li = ul.children;
+        for (var i = 0; i < Li.length; i++){
+            let ul2 = Li[i].querySelector("ul");
+            if (ul2 !== null) {
+                dom2sortable(ul2);
+            };
+        }
+    }
+
+
+    window.onload = () => {
+        var el = document.getElementById('tree').querySelector("ul");
+        dom2sortable(el);
+    }
+    
+    const changeLegend = e => {
+        e.stopPropagation();
+        let target = e.currentTarget.parentNode.parentNode.parentNode.parentNode.querySelector(":scope>legend>.container1>input");
+        if (target !== null) {
+            target.value = e.currentTarget.querySelector("input").value;
+        }
+    }
+        
+    const deClose = e => {
+        e.stopPropagation();
+        let li = e.currentTarget.parentNode.parentNode;
+        let ul = li.parentNode;
+        const lists = Array.from(ul.children);
+        // 9:17 2020/04/18 https://qiita.com/nishihara_zari/items/9471389f995448e9526e
+        const idx = lists.findIndex(element => {
+            return element === li;
+        });
+        let ulChild = Array.from(li.querySelector("ul").children);
+        for (let x of ulChild.reverse()) {
+            ul.insertBefore(x, ul.children[idx]);
+        }
+        li.remove();
+    }
+
+    const aaa = (tr, x) => (
+                <li>
+                    <fieldset className="closed">
+                        <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
+                        <legend className="acd-label" onClick={(e) => changeLegend(e)}>
+                            <div className="handle" />
+                            <div className="container1">
+                                <input className="label-name" defaultValue={x.name}/>
+                                <div className="underline" />
+                            </div>
+                            <textarea className="description"/>
+                            <input type="checkbox" className="grouping"/>
+                            <div className="toggle"  onClick={(e) => e.currentTarget.parentNode.parentNode.querySelector(":scope>input[type=checkbox]").click()}/>
+                        </legend>
+                        <ul className="acd-content">
+                            {tr}
+                        </ul>
+                        <button className="deClose" onClick={(e) => deClose(e)}>x</button>
+                        <button className="addLi2" onClick={(e) => addLiDOM(e)}>+</button>
+                    </fieldset>
+                </li>
+    );
+
+    const getChecked = e => {
+        let checked = [...document.querySelectorAll(".grouping:checked")].map(x => x.parentNode.parentNode.parentNode)
+        return checked;
+    }
+
+    const addLiDOM = e => {
+        e.stopPropagation();
+        let div = document.createElement("div");
+        let dom = e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
+        for (let x of getChecked()) {
+            dom.querySelector("ul").appendChild(x);
+        }
+        dom2sortable(dom.querySelector("ul"));
+
+        for (let x of [...document.querySelectorAll(".grouping:checked")]) {
+            x.checked = false;
+        }
+    }
+
+    class TreeComponent extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+            
+            }
+        }
+        render() {
+            let tr = this.props.tr;
+            let x = this.props.x;
+            return aaa(tr, x);
+        }
+    }
+    
+    const treeView = (node) => {
+        let dd = node.map((x, i) => {
+            let tr = "";
+            if (x.node !== undefined && x.node.length !== 0) tr = treeView(x.node);
+            return (<TreeComponent tr={tr} x={x} key={i}/>);
+        });
+        return dd;
+    }
+    
+    const dom2tree = (dom) => {
+        let ul = dom.querySelector("ul");
+        let result = {name: "root", node: []};
+        let findLi = ul.children;
+        let getChildName = function(Li) {
+            let node = [];
+            for (var i = 0; i < Li.length; i++){
+                let name = Li[i].querySelector(".label-name").value;
+                let description = Li[i].querySelector(".description").value;
+                let x = {name: name, description: description};
+                let ul2 = Li[i].querySelector("ul");
+                if (ul2 === null) {
+                    node.push(x);
+                } else {
+                    let li2 = ul2.children;
+                    x['node'] = getChildName(li2);
+                    node.push(x);
+                };
+            }
+            return node
+        }
+        return getChildName(findLi);
+    }
+
+    class App extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                data:[],
+            };
+            this.pushData = this.pushData.bind(this);
+        }
+        pushData() {
+            let x = dom2tree(document.getElementById("tree"));
+            this.setState(prevState => {
+                return { data: prevState.data.concat([x]) };
+            });
+        }
+        
+        render() {
+            return (
+            <div>
+                <div id="tree">
+                    <input className="acd-check" type="checkbox" checked readOnly></input>
+                    <label>start: </label>
+                    <input type="date" className="startDate"></input>
+                    <input type="time" className="startTime" step="1"></input>
+                    <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".startTime").value=now.format("HH:mm:ss");e.currentTarget.parentNode.querySelector(".startDate").value=now.format("YYYY-MM-DD");}}>Now</button>
+                    <br/>
+                    <label>end: </label>
+                    <input type="date" className="endDate"></input>
+                    <input type="time" className="endTime" step="1"></input>
+                    <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".endTime").value=now.format("HH:mm:ss");e.currentTarget.parentNode.querySelector(".endDate").value=now.format("YYYY-MM-DD");}}>Now</button>
+                    <ul className="acd-content">
+                        {treeView(data)}
+                    </ul>
+                    <button className="addLiBase" onClick={(e) => addLiDOM(e)}>+</button>
+                    <button onClick={this.pushData}>+</button>
+                </div>
+                <ul>
+                    {this.state.data.map((x, i) =>{return (<li key={i}>{JSON.stringify(x)}</li>)})}
+                </ul>
+            </div>
+            );          
+        }
+    }
+    ReactDOM.render(<App/>, document.getElementById('root'));
+    </script>
+  </body>
+</html>
