@@ -7,6 +7,7 @@
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
     <link rel="apple-touch-icon" href="./icon-192.png" sizes="192x192"/>
     <link rel="manifest" href="./manifest.json">
     <script>
@@ -117,25 +118,25 @@
             background-color: #9999FF;
         }
         
-        .represent {
-            height: 1em;
-            width: 1em;
-            background-color: #00FF00;
+        .rect {
+            height: 16px;
+            width: 16px;
             display:inline-block;
+        }
+        
+        .represent {
+              color: #10FF10;
+//            background-color: #00FF00;
         }
         
         .handle {
-            height: 1em;
-            width: 1em;
-            background-color: #FF0000;
-            display:inline-block;
+              color: #FF1010;
+//            background-color: #FFFFFF;
         }
         
         .toggle {
-            height: 1em;
-            width: 1em;
-            background-color: #FF00FF;
-            display:inline-block;
+              color: #FF00FF;
+//            background-color: #FF00FF;
         }
         
         .represent, .handle, .container1, .grouping, .toggle {
@@ -256,15 +257,21 @@
                     <fieldset className="closed">
                         <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
                         <legend className="acd-label">
-                            <div className="represent" onClick={(e) => changeLegend(e)}/>
+                            <div className="represent rect" onClick={(e) => changeLegend(e)}>
+                                <i className="fas fa-arrow-circle-up"></i>
+                            </div>
                             <div className="container1">
                                 <input className="label-name" defaultValue={x.name}/>
                                 <div className="underline" />
                             </div>
                             <textarea className="description"/>
                             <input type="checkbox" className="grouping"/>
-                            <div className="toggle"  onClick={(e) => e.currentTarget.parentNode.parentNode.querySelector(":scope>input[type=checkbox]").click()}/>
-                            <div className="handle"/>
+                            <div className="toggle rect"  onClick={(e) => e.currentTarget.parentNode.parentNode.querySelector(":scope>input[type=checkbox]").click()}>
+                                <i className="fas fa-folder-open"></i>
+                            </div>
+                            <div className="handle rect">
+                                <i className="fas fa-arrows-alt"></i>
+                            </div>
                         </legend>
                         <ul className="acd-content">
                             {tr}
@@ -350,10 +357,53 @@
             this.pushData = this.pushData.bind(this);
         }
         pushData() {
-            let x = dom2tree(document.getElementById("tree"));
-            this.setState(prevState => {
-                return { data: prevState.data.concat([x]) };
-            });
+            let tree = document.getElementById("tree");
+            let startDate = document.getElementById("startDate").value;
+            let startTime = document.getElementById("startTime").value;
+            let endDate = document.getElementById("endDate").value;
+            let endTime = document.getElementById("endTime").value;
+            
+            let x = {
+                startDate: startDate,
+                startTime: startTime,
+                endDate: endDate,
+                endTime: endTime,
+                data: dom2tree(tree)
+            };
+
+            var options = {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
+            };
+            const commonProcess = (x) => {
+                    this.setState(prevState => {
+                        return { data: prevState.data.concat([x]) };
+                    });
+                    Array.from(tree.querySelector(".acd-content").children).forEach((el) => {
+                        el.remove();
+                    });
+            };
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const crds = pos.coords;
+                cl(crds)
+                    x["longitude"] = crds.longitude;
+                    x["latitude"] = crds.latitude;
+                    x["altitude"] = crds.altitude;
+                    x["accuracy"] = crds.accuracy;
+                    x["altitudeAccuracy"] = crds.altitudeAccuracy;
+                    x["speed"] = crds.speed;
+                    x["timestamp"] = pos.timestamp;
+                    cl(x)
+                    commonProcess(x);
+                },
+                (err) => {
+                    x["code"] = err.code;
+                    x["message"] = err.message;
+                    commonProcess(x);
+                }, options);
+
         }
         
         render() {
@@ -361,14 +411,14 @@
             <div>
                 <div id="tree">
                     <input className="acd-check" type="checkbox" checked readOnly></input>
-                    <input type="date" className="startDate"></input>
-                    <input type="time" className="startTime" step="1"></input>
+                    <input type="date" className="startDate" id="startDate"></input>
+                    <input type="time" className="startTime" id="startTime" step="1"></input>
                     <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".startTime").value=now.format("HH:mm:ss");e.currentTarget.parentNode.querySelector(".startDate").value=now.format("YYYY-MM-DD");}}>Now</button>
                     <br/>
                     <label>↓</label>
                     <br/>
-                    <input type="date" className="endDate"></input>
-                    <input type="time" className="endTime" step="1"></input>
+                    <input type="date" className="endDate" id="endDate"></input>
+                    <input type="time" className="endTime" id="endTime" step="1"></input>
                     <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".endTime").value=now.format("HH:mm:ss");e.currentTarget.parentNode.querySelector(".endDate").value=now.format("YYYY-MM-DD");}}>Now</button>
                     <ul className="acd-content">
                         {treeView(data)}
