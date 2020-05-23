@@ -39,18 +39,32 @@
             border: 1px solid #FF0000;
         }
         
-        li {
+        .aaaLi {
             list-style:none;
 //            border: 1px solid #00FF00;
             vertical-align: center;
             box-shadow: 2px 2px 4px gray;
         }
-        ul {
+        .aaaUl {
             padding: 0%;
+        }
+        
+        .aaa2Li {
+            list-style:none;
+//            border: 1px solid #00FF00;
+        }
+        
+        .aaa2Ul {
+//            padding: 0%;
         }
         
         .acd-check{
             display: none;
+        }
+        .bbb {
+            display: block;
+            margin-left: 1em;
+            margin-right: auto;
         }
         
         .acd-content{
@@ -91,25 +105,25 @@
         .acd-check:checked ~ .addLi2{
             display: block;
             margin: 0 0 0 auto;
-            border: 1px solid #00FF00;
+//            border: 1px solid #00FF00;
         }
         
         .acd-check:checked ~ .deClose{
             display: block;
             margin: auto 0 0 0;
-            border: 1px solid #00FF00;
+//            border: 1px solid #00FF00;
         }
 
         .addLiBase{
             display: block;
             margin: 0 0 0 auto;
-            border: 1px solid #00FF00;
+//            border: 1px solid #00FF00;
         }
         
         .grouping {
             display: inline-block;
             margin: 0 0 0 auto;
-            border: 1px solid #00FF00;
+//            border: 1px solid #00FF00;
             width: 1em;
             height: 1em;
         }
@@ -141,6 +155,9 @@
         
         .represent, .handle, .container1, .grouping, .toggle {
             vertical-align: top;
+        }
+        .skyblue {
+            background-color: skyBlue;
         }
         
         .label-name, .underline {
@@ -198,6 +215,10 @@
             position: relative;
         }
         
+        .dsc {
+            display: none;
+        }
+        
     </style>
     
     <script type="text/babel">
@@ -252,8 +273,8 @@
         li.remove();
     }
 
-    const aaa = (tr, x) => (
-                <li>
+    const aaa = (tr, x, i) => (
+                <li className="aaaLi" key={i}>
                     <fieldset className="closed">
                         <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
                         <legend className="acd-label">
@@ -273,7 +294,7 @@
                                 <i className="fas fa-arrows-alt"></i>
                             </div>
                         </legend>
-                        <ul className="acd-content">
+                        <ul className="acd-content aaaUl">
                             {tr}
                         </ul>
                         <button className="deClose" onClick={(e) => deClose(e)}>x</button>
@@ -282,44 +303,157 @@
                 </li>
     );
 
+
+    const aaa2 = (tr, x, i) => {
+        if (tr === "") {
+       return (<li key={i} className="aaa2Li">
+            <input type="checkbox" className="pickup"></input>
+            <label>{x.name}</label>
+            <div className="dsc">{x.description}</div>
+            <div className="data" value={JSON.stringify(x)}></div>
+        </li>)
+        } else {
+       return (<li key={i} className="aaa2Li">
+            <fieldset>
+                <legend>
+                    <input type="checkbox" className="pickup"></input>
+                    <label>{x.name}</label>
+                    <div className="dsc">{x.description}</div>
+                    <div className="data" value={JSON.stringify(x)}></div>
+                </legend>
+                <ul className="aaa2Ul">
+                    {tr}
+                </ul>
+            </fieldset>
+        </li>)
+        }
+    };
+    
+    const treeView2 = (node) => {
+    cl(node)
+        let dd = node.map((x, i) => {
+            let tr = "";
+            if (x.node !== undefined && x.node.length !== 0) tr = treeView2(x.node);
+            return (aaa2(tr, x, i));
+        });
+        return dd;
+    }
+    
+    const bbb = (x) => {
+        return (
+            <li className="aaaLi">
+                <div>
+                    <label>{x.endTime}</label>
+                    <button onClick={(e) => {document.getElementById("startTime").value=x.endTime;document.getElementById("startDate").value=x.endDate;}}>s</button>
+                    <button onClick={(e) => {document.getElementById("endTime").value=x.endTime;document.getElementById("endDate").value=x.endDate;}}>e</button>
+                </div>
+                <div>{x.data.map(y => y.name).reduce((y1, y2) => y1 + ", " + y2)}</div>
+                <div className="toggle rect"  onClick={(e) => {e.currentTarget.parentNode.querySelector(":scope>div>input[type=checkbox]").click()}}>
+                    <i className="fas fa-folder-open"></i>
+                </div>
+                <div className="closed bbb">
+                    <input className="acd-check"  type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open bbb"} else {e.currentTarget.parentNode.className = "closed bbb"} }}></input>
+                    <ul className="acd-content aaaUl">
+                        {treeView2(x.data)}
+                    </ul>
+                </div>
+                <div>
+                    <label>{x.startTime}</label>
+                    <button onClick={(e) => {document.getElementById("startTime").value=x.startTime;document.getElementById("startDate").value=x.startDate;}}>s</button>
+                    <button onClick={(e) => {document.getElementById("endTime").value=x.startTime;document.getElementById("endDate").value=x.startDate;}}>e</button>
+                </div>
+            </li>
+        );
+    }
+
     const getChecked = e => {
         let checked = [...document.querySelectorAll(".grouping:checked")].map(x => x.parentNode.parentNode.parentNode)
+        return checked;
+    }
+    
+    const getChecked2 = e => {
+        let checked = [...document.getElementById("archives").querySelectorAll(".pickup:checked")].map(x => x.parentNode)
         return checked;
     }
 
     const addLiDOM = e => {
         e.stopPropagation();
         let div = document.createElement("div");
-        let dom = e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
-        for (let x of getChecked()) {
-            dom.querySelector("ul").appendChild(x);
-        }
-        dom2sortable(dom.querySelector("ul"));
-
-        for (let x of [...document.querySelectorAll(".grouping:checked")]) {
-            x.checked = false;
-        }
-    }
-
-    class TreeComponent extends React.Component {
-        constructor(props) {
-            super(props);
-            this.state = {
-            
+        const c1 = getChecked();
+        for (let xx of c1) {
+            cl(xx)
+            cl(xx == e.currentTarget.parentNode.parentNode)
+            if (xx == e.currentTarget.parentNode.parentNode) {
+                alert("You selected Parent Node!!");
+                e.currentTarget.parentNode.parentNode.querySelector(".grouping:checked").checked = false;
+                return null;
             }
         }
-        render() {
-            let tr = this.props.tr;
-            let x = this.props.x;
-            return aaa(tr, x);
+        const c2 = getChecked2();
+        if (c1.length + c2.length > 1) {
+            let dom = e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
+            
+            for (let x of getChecked()) {
+                dom.querySelector("ul").appendChild(x);
+            }
+            
+            for (let x of getChecked2()) {
+                let div = document.createElement("div");
+                let dom2 = ReactDOM.render(treeView([JSON.parse(x.querySelector(".data").getAttribute("value"))]), div);
+                for (let x of [...document.querySelectorAll(".acd-check")]) {
+                    x.click();
+                }
+                dom.querySelector("ul").appendChild(dom2);
+            }
+
+            dom2sortable(dom.querySelector("ul"));
+            
+            for (let x of [...document.querySelectorAll(".grouping:checked")]) {
+                x.checked = false;
+            }
+            for (let x of [...document.querySelectorAll(".pickup:checked")]) {
+                x.checked = false;
+            }
+            dom.querySelector(".acd-check").click();
+            
+        } else if (c1.length + c2.length == 1) {
+
+            let dom = e.currentTarget.parentNode.querySelector("ul");
+            
+            for (let x of getChecked()) {
+                dom.appendChild(x);
+            }
+            
+            for (let x of getChecked2()) {
+                let div = document.createElement("div");
+                let dom2 = ReactDOM.render(treeView([JSON.parse(x.querySelector(".data").getAttribute("value"))]), div);
+                for (let x of [...dom2.querySelectorAll(".acd-check")]) {
+                    x.click();
+                }
+                dom.appendChild(dom2);
+            }
+
+            dom2sortable(dom.querySelector("ul"));
+            
+            for (let x of [...document.querySelectorAll(".grouping:checked")]) {
+                x.checked = false;
+            }
+            for (let x of [...document.querySelectorAll(".pickup:checked")]) {
+                x.checked = false;
+            }
+
+        } else if (c1.length + c2.length == 0) {
+            let dom = e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
+            dom2sortable(dom.querySelector("ul"));
         }
     }
+
     
     const treeView = (node) => {
         let dd = node.map((x, i) => {
             let tr = "";
             if (x.node !== undefined && x.node.length !== 0) tr = treeView(x.node);
-            return (<TreeComponent tr={tr} x={x} key={i}/>);
+            return (aaa(tr, x, i));
         });
         return dd;
     }
@@ -378,16 +512,22 @@
             };
             const commonProcess = (x) => {
                     this.setState(prevState => {
-                        return { data: prevState.data.concat([x]) };
+                        return { data: [x].concat(prevState.data) };
                     });
                     Array.from(tree.querySelector(".acd-content").children).forEach((el) => {
                         el.remove();
                     });
+                     document.getElementById("startDate").value = "";
+                     document.getElementById("startTime").value = "";
+                     document.getElementById("endDate").value = "";
+                     document.getElementById("endTime").value = "";
+                     [...document.getElementById("archives").querySelectorAll(".pickup")].forEach(e => {e.checked=false;});
+                     [...document.getElementById("archives").querySelectorAll(".acd-check")].forEach(e => {e.checked=false;});
+                     
             };
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const crds = pos.coords;
-                cl(crds)
                     x["longitude"] = crds.longitude;
                     x["latitude"] = crds.latitude;
                     x["altitude"] = crds.altitude;
@@ -395,7 +535,6 @@
                     x["altitudeAccuracy"] = crds.altitudeAccuracy;
                     x["speed"] = crds.speed;
                     x["timestamp"] = pos.timestamp;
-                    cl(x)
                     commonProcess(x);
                 },
                 (err) => {
@@ -420,14 +559,14 @@
                     <input type="date" className="endDate" id="endDate"></input>
                     <input type="time" className="endTime" id="endTime" step="1"></input>
                     <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".endTime").value=now.format("HH:mm:ss");e.currentTarget.parentNode.querySelector(".endDate").value=now.format("YYYY-MM-DD");}}>Now</button>
-                    <ul className="acd-content">
+                    <ul className="acd-content aaaUl">
                         {treeView(data)}
                     </ul>
                     <button className="addLiBase" onClick={(e) => addLiDOM(e)}>+</button>
                     <button onClick={this.pushData}>+</button>
                 </div>
-                <ul>
-                    {this.state.data.map((x, i) =>{return (<li key={i}>{JSON.stringify(x)}</li>)})}
+                <ul id="archives" className="aaaUl">
+                    {this.state.data.map((x, i) =>{return bbb(x)})}
                 </ul>
             </div>
             );          
