@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Closure Editor</title>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
+    <link rel="apple-touch-icon" href="./icon-192.png" sizes="192x192"/>
+    <link rel="manifest" href="./manifest.json">
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js').then(function() { console.log('Service Worker Registered'); });
+    }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.10.1/Sortable.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/locale/ja.js"></script>
+
+  </head>
+  <body>
+    <div id="root"></div>
+    <style>
+        body{   // 16:03 2020/05/01 https://www.itti.jp/web-design/not-drag/
+            user-select:none;
+            -webkit-user-select:none;
+            -ms-user-select: none;
+            -moz-user-select:none;
+            -khtml-user-select:none;
+            -webkit-user-drag:none;
+            -khtml-user-drag:none;
+        }
+    
+        #tree {
+            border: 1px solid #FF0000;
+        }
+        
+        .aaaLi {
+            list-style:none;
+//            border: 1px solid #00FF00;
+            vertical-align: center;
+            box-shadow: 2px 2px 4px gray;
+        }
+        .aaaUl {
+            padding: 0%;
+        }
+        
+        .aaa2Li {
+            list-style:none;
+//            border: 1px solid #00FF00;
+        }
+        
+        .aaa2Ul {
+//            padding: 0%;
+        }
+        
+        .acd-check{
+            display: none;
+        }
+        .bbb {
+            display: block;
+            margin-left: 1em;
+            margin-right: auto;
+        }
+        
+        .acd-content{
+            height: 0;
+            opacity: 0;
+            transition: .5s;
+            visibility: hidden;
+        }
+        
+        .acd-check:checked ~ .acd-content{
+            height: auto;
+            opacity: 1;
+            padding: 2%;
+            visibility: visible;
+        }
+        
+        .closed {
+            border: 0px;
+        }
+        
+        .open {
+        
+        }
+        
+        .addLi {
+            display: block;
+            margin: 0 0 0 0;
+            border: 1px solid #00FF00;
+            height: 0px;
+            width: 0px;
+            visibility: hidden;
+        }
+
+        .addLi2, .deClose {
+            display: none;
+        }
+
+        .acd-check:checked ~ .addLi2{
+            display: block;
+            margin: 0 0 0 auto;
+//            border: 1px solid #00FF00;
+        }
+        
+        .acd-check:checked ~ .deClose{
+            display: block;
+            margin: auto 0 0 0;
+//            border: 1px solid #00FF00;
+        }
+
+        .addLiBase{
+            display: block;
+            margin: 0 0 0 auto;
+//            border: 1px solid #00FF00;
+        }
+        
+        .grouping {
+            display: inline-block;
+            margin: 0 0 0 auto;
+//            border: 1px solid #00FF00;
+            width: 1em;
+            height: 1em;
+        }
+
+        .blue-background-class {
+            background-color: #9999FF;
+        }
+        
+        .rect {
+            height: 16px;
+            width: 16px;
+            display:inline-block;
+        }
+        
+        .represent {
+              color: #10FF10;
+//            background-color: #00FF00;
+        }
+        
+        .handle {
+              color: #FF1010;
+//            background-color: #FFFFFF;
+        }
+        
+        .toggle {
+              color: #FF00FF;
+//            background-color: #FF00FF;
+        }
+        
+        .represent, .handle, .container1, .grouping, .toggle {
+            vertical-align: top;
+        }
+        .skyblue {
+            background-color: skyBlue;
+        }
+        
+        .label-name, .underline {
+            width: 10em;
+        }
+
+        .label-name {
+            border: none;
+            outline: 0;
+            border-bottom: 1px solid #d1d5db;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .container1 {
+            display:inline-block;
+            line-height: 0; // 11:32 2020/04/30 https://coliss.com/articles/build-websites/operation/css/6-cases-of-unwanted-spaces-in-page-layout-by-demosthenes.html
+        }
+
+        .underline { // 8:56 2020/05/01 https://qiita.com/miyarappo/items/33a30e877e3964859b93
+            height: 2px;
+            background: skyBlue;
+            transform-origin: center;
+            transform: scaleX(0);
+            transition: transform 0.18s ease-out;
+        }
+
+        .label-name:focus ~ .underline {
+            transform: scaleX(1);
+            height: 2px;
+        }
+
+        .label-name:focus {
+            background-color: #FFAAAA;
+        }
+        
+        .description {
+            height: 1em;
+            width: 5em;
+        }
+
+        .description:focus {
+            height: 15em;
+            width: 15em;
+        }
+
+        textarea {
+            resize: none;
+        }
+        
+        input, textarea {
+            font-size: 16px;
+        }
+        
+        fieldset {
+            position: relative;
+        }
+        
+        .dsc, #startTimeData, #endTimeData {
+            display: none;
+        }
+        
+    </style>
+    
+    <script type="text/babel">
+    const cl = console.log;
+    const data = [];
+    const dom2sortable = (ul) => {
+        new Sortable(ul, {
+            group: 'acd-content',
+            animation: 150,
+            fallbackOnBody: true,
+            swapThreshold: 0.65,
+            ghostClass: 'blue-background-class',
+            handle: ".handle"
+        });
+        
+        let Li = ul.children;
+        for (var i = 0; i < Li.length; i++){
+            let ul2 = Li[i].querySelector("ul");
+            if (ul2 !== null) {
+                dom2sortable(ul2);
+            };
+        }
+    }
+
+
+    window.onload = () => {
+        var el = document.getElementById('tree').querySelector("ul");
+        dom2sortable(el);
+    }
+    
+    const changeLegend = e => {
+        e.stopPropagation();
+        let target = e.currentTarget.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.querySelector(":scope>fieldset>legend>.container1>input");
+        if (target !== null) {
+            target.value = e.currentTarget.parentNode.querySelector(".label-name").value;
+        }
+    }
+        
+    const deClose = e => {
+        e.stopPropagation();
+        let li = e.currentTarget.parentNode.parentNode;
+        let ul = li.parentNode;
+        const lists = Array.from(ul.children);
+        // 9:17 2020/04/18 https://qiita.com/nishihara_zari/items/9471389f995448e9526e
+        const idx = lists.findIndex(element => {
+            return element === li;
+        });
+        let ulChild = Array.from(li.querySelector("ul").children);
+        for (let x of ulChild.reverse()) {
+            ul.insertBefore(x, ul.children[idx]);
+        }
+        li.remove();
+    }
+
+    const aaa = (tr, x, i) => (
+                <li className="aaaLi" key={i}>
+                    <fieldset className="closed">
+                        <input className="acd-check" type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open"} else {e.currentTarget.parentNode.className = "closed"} }}></input>
+                        <legend className="acd-label">
+                            <div className="represent rect" onClick={(e) => changeLegend(e)}>
+                                <i className="fas fa-arrow-circle-up"></i>
+                            </div>
+                            <div className="container1">
+                                <input className="label-name" defaultValue={x.name}/>
+                                <div className="underline" />
+                            </div>
+                            <textarea className="description"/>
+                            <input type="checkbox" className="grouping"/>
+                            <div className="toggle rect"  onClick={(e) => e.currentTarget.parentNode.parentNode.querySelector(":scope>input[type=checkbox]").click()}>
+                                <i className="fas fa-folder-open"></i>
+                            </div>
+                            <div className="handle rect">
+                                <i className="fas fa-arrows-alt"></i>
+                            </div>
+                        </legend>
+                        <ul className="acd-content aaaUl">
+                            {tr}
+                        </ul>
+                        <button className="deClose" onClick={(e) => deClose(e)}>x</button>
+                        <button className="addLi2" onClick={(e) => addLiDOM(e)}>+</button>
+                    </fieldset>
+                </li>
+    );
+
+
+    const aaa2 = (tr, x, i) => {
+        if (tr === "") {
+       return (<li key={i} className="aaa2Li">
+            <input type="checkbox" className="pickup"></input>
+            <label>{x.name}</label>
+            <div className="dsc">{x.description}</div>
+            <div className="data" value={JSON.stringify(x)}></div>
+        </li>)
+        } else {
+       return (<li key={i} className="aaa2Li">
+            <fieldset>
+                <legend>
+                    <input type="checkbox" className="pickup"></input>
+                    <label>{x.name}</label>
+                    <div className="dsc">{x.description}</div>
+                    <div className="data" value={JSON.stringify(x)}></div>
+                </legend>
+                <ul className="aaa2Ul">
+                    {tr}
+                </ul>
+            </fieldset>
+        </li>)
+        }
+    };
+    
+    const treeView2 = (node) => {
+    cl(node)
+        let dd = node.map((x, i) => {
+            let tr = "";
+            if (x.node !== undefined && x.node.length !== 0) tr = treeView2(x.node);
+            return (aaa2(tr, x, i));
+        });
+        return dd;
+    }
+    
+    const bbb = (x) => {
+        return (
+            <li className="aaaLi">
+                <div>
+                    <label>{x.endTime}</label>
+                    <button onClick={(e) => {document.getElementById("startTime").value=x.endTime;document.getElementById("startDate").value=x.endDate;}}>s</button>
+                    <button onClick={(e) => {document.getElementById("endTime").value=x.endTime;document.getElementById("endDate").value=x.endDate;}}>e</button>
+                </div>
+                <div>{x.data.map(y => y.name).reduce((y1, y2) => y1 + ", " + y2)}</div>
+                <div className="toggle rect"  onClick={(e) => {e.currentTarget.parentNode.querySelector(":scope>div>input[type=checkbox]").click()}}>
+                    <i className="fas fa-folder-open"></i>
+                </div>
+                <div className="closed bbb">
+                    <input className="acd-check"  type="checkbox" onClick={(e) => {if (e.currentTarget.checked) {e.currentTarget.parentNode.className = "open bbb"} else {e.currentTarget.parentNode.className = "closed bbb"} }}></input>
+                    <ul className="acd-content aaaUl">
+                        {treeView2(x.data)}
+                    </ul>
+                </div>
+                <div>
+                    <label>{x.startTime}</label>
+                    <button onClick={(e) => {document.getElementById("startTime").value=x.startTime;document.getElementById("startDate").value=x.startDate;}}>s</button>
+                    <button onClick={(e) => {document.getElementById("endTime").value=x.startTime;document.getElementById("endDate").value=x.startDate;}}>e</button>
+                </div>
+            </li>
+        );
+    }
+
+    const getChecked = e => {
+        let checked = [...document.querySelectorAll(".grouping:checked")].map(x => x.parentNode.parentNode.parentNode)
+        return checked;
+    }
+    
+    const getChecked2 = e => {
+        let checked = [...document.getElementById("archives").querySelectorAll(".pickup:checked")].map(x => x.parentNode)
+        return checked;
+    }
+
+    const addLiDOM = e => {
+        e.stopPropagation();
+        let div = document.createElement("div");
+        const c1 = getChecked();
+        for (let xx of c1) {
+            cl(xx)
+            cl(xx == e.currentTarget.parentNode.parentNode)
+            if (xx == e.currentTarget.parentNode.parentNode) {
+                alert("You selected Parent Node!!");
+                e.currentTarget.parentNode.parentNode.querySelector(".grouping:checked").checked = false;
+                return null;
+            }
+        }
+        const c2 = getChecked2();
+        if (c1.length + c2.length > 1) {
+            let dom = e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
+            
+            for (let x of getChecked()) {
+                dom.querySelector("ul").appendChild(x);
+            }
+            
+            for (let x of getChecked2()) {
+                let div = document.createElement("div");
+                let dom2 = ReactDOM.render(treeView([JSON.parse(x.querySelector(".data").getAttribute("value"))]), div);
+                for (let x of [...document.querySelectorAll(".acd-check")]) {
+                    x.click();
+                }
+                dom.querySelector("ul").appendChild(dom2);
+            }
+
+            dom2sortable(dom.querySelector("ul"));
+            
+            for (let x of [...document.querySelectorAll(".grouping:checked")]) {
+                x.checked = false;
+            }
+            for (let x of [...document.querySelectorAll(".pickup:checked")]) {
+                x.checked = false;
+            }
+            dom.querySelector(".acd-check").click();
+            
+        } else if (c1.length + c2.length == 1) {
+
+            let dom = e.currentTarget.parentNode.querySelector("ul");
+            
+            for (let x of getChecked()) {
+                dom.appendChild(x);
+            }
+            
+            for (let x of getChecked2()) {
+                let div = document.createElement("div");
+                let dom2 = ReactDOM.render(treeView([JSON.parse(x.querySelector(".data").getAttribute("value"))]), div);
+                for (let x of [...dom2.querySelectorAll(".acd-check")]) {
+                    x.click();
+                }
+                dom.appendChild(dom2);
+            }
+
+            dom2sortable(dom.querySelector("ul"));
+            
+            for (let x of [...document.querySelectorAll(".grouping:checked")]) {
+                x.checked = false;
+            }
+            for (let x of [...document.querySelectorAll(".pickup:checked")]) {
+                x.checked = false;
+            }
+
+        } else if (c1.length + c2.length == 0) {
+            let dom = e.currentTarget.parentNode.querySelector("ul").appendChild(ReactDOM.render(aaa("", {name:""}), div));
+            dom2sortable(dom.querySelector("ul"));
+        }
+    }
+
+    
+    const treeView = (node) => {
+        let dd = node.map((x, i) => {
+            let tr = "";
+            if (x.node !== undefined && x.node.length !== 0) tr = treeView(x.node);
+            return (aaa(tr, x, i));
+        });
+        return dd;
+    }
+    
+    const dom2tree = (dom) => {
+        let ul = dom.querySelector("ul");
+        let result = {name: "root", node: []};
+        let findLi = ul.children;
+        let getChildName = function(Li) {
+            let node = [];
+            for (var i = 0; i < Li.length; i++){
+                let name = Li[i].querySelector(".label-name").value;
+                let description = Li[i].querySelector(".description").value;
+                let x = {name: name, description: description};
+                let ul2 = Li[i].querySelector("ul");
+                if (ul2 === null) {
+                    node.push(x);
+                } else {
+                    let li2 = ul2.children;
+                    x['node'] = getChildName(li2);
+                    node.push(x);
+                };
+            }
+            return node
+        }
+        return getChildName(findLi);
+    }
+
+    class App extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                data:[],
+                start: 0,
+                end: 0
+            };
+            this.pushData = this.pushData.bind(this);
+            this.changeStartTime = this.changeStartTime.bind(this);
+            this.changeEndTime = this.changeEndTime.bind(this);
+        }
+        
+        changeStartTime() {
+            this.setState({
+                startTime: document.getElementById("startTimeData").getAttribute("value")
+            });
+        }
+        
+        changeEndTime() {
+            this.setState({
+                endTime: document.getElementById("endTimeData").getAttribute("value")
+            });
+        }
+        
+        pushData() {
+            let tree = document.getElementById("tree");
+            let startDate = document.getElementById("startDate").value;
+            let startTime = document.getElementById("startTime").value;
+            let endDate = document.getElementById("endDate").value;
+            let endTime = document.getElementById("endTime").value;
+            
+            let x = {
+                startDate: startDate,
+                startTime: startTime,
+                endDate: endDate,
+                endTime: endTime,
+                data: dom2tree(tree)
+            };
+            if (x.data.length === 0) {
+                return null;
+            }
+
+            var options = {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
+            };
+            const commonProcess = (x) => {
+                    this.setState(prevState => {
+                        return { data: [x].concat(prevState.data) };
+                    });
+                    Array.from(tree.querySelector(".acd-content").children).forEach((el) => {
+                        el.remove();
+                    });
+                     document.getElementById("startDate").value = "";
+                     document.getElementById("startTime").value = "";
+                     document.getElementById("endDate").value = "";
+                     document.getElementById("endTime").value = "";
+                     [...document.getElementById("archives").querySelectorAll(".pickup")].forEach(e => {e.checked=false;});
+                     [...document.getElementById("archives").querySelectorAll(".acd-check")].forEach(e => {e.checked=false;});
+                     
+            };
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const crds = pos.coords;
+                    x["longitude"] = crds.longitude;
+                    x["latitude"] = crds.latitude;
+                    x["altitude"] = crds.altitude;
+                    x["accuracy"] = crds.accuracy;
+                    x["altitudeAccuracy"] = crds.altitudeAccuracy;
+                    x["speed"] = crds.speed;
+                    x["timestamp"] = pos.timestamp;
+                    commonProcess(x);
+                },
+                (err) => {
+                    x["code"] = err.code;
+                    x["message"] = err.message;
+                    commonProcess(x);
+                }, options);
+
+        }
+        
+        render() {
+            var ms = moment(this.state.end).diff(moment(this.state.start));
+            var d = moment.duration(ms);
+            
+            let delta = "";
+            if (ms > 0) {
+                delta = Math.floor(d.asHours()) + moment.utc(ms).format(":mm:ss");
+            }
+            
+            return (
+            <div> 
+                <div id="tree">
+                    <input className="acd-check" type="checkbox" checked></input>
+                    <input type="datetime-local" className="start" id="start" step="1" onChange={(e) => {cl(e.target.value);this.setState({startDate: Number(new moment(e.target.value, "YYYY-MM-DDTHH:mm:ss"))});cl(this.state);}}></input>
+                    <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".start").value=now.format("YYYY-MM-DDTHH:mm:ss");e.currentTarget.parentNode.querySelector("#startTimeData").setAttribute("value", Number(now));this.setState({start: Number(now)});e.currentTarget.parentNode.querySelector("#startTimeData").setAttribute("value", Number(now));}}>Now</button>
+                    <input type="text" id="startTimeData" value={this.state.start}/>
+                    <br/>
+                    <label>↓</label>
+                    <br/>
+                    <input type="datetime-local" className="end" id="end" step="1" onChange={(e) => {cl(e.target.value);this.setState({endDate: Number(new moment(e.target.value, "YYYY-MM-DDTHH:mm:ss"))});cl(this.state);}}></input>
+                    <button onClick={(e) => {const now = new moment(); e.currentTarget.parentNode.querySelector(".end").value=now.format("YYYY-MM-DDTHH:mm:ss");e.currentTarget.parentNode.querySelector("#endTimeData").setAttribute("value", Number(now));this.setState({end: Number(now)});e.currentTarget.parentNode.querySelector("#endTimeData").setAttribute("value", Number(now));}}>Now</button>
+                    <input type="text" id="endTimeData" value={this.state.end}/>
+                    <span>{delta}</span>
+                    <ul className="acd-content aaaUl">
+                        {treeView(data)}
+                    </ul>
+                    <button className="addLiBase" onClick={(e) => addLiDOM(e)}>+</button>
+                    <button onClick={this.pushData}>+</button>
+                </div>
+                <ul id="archives" className="aaaUl">
+                    {this.state.data.map((x, i) =>{return bbb(x)})}
+                </ul>
+            </div>
+            );          
+        }
+    }
+    ReactDOM.render(<App/>, document.getElementById('root'));
+    </script>
+  </body>
+</html>
